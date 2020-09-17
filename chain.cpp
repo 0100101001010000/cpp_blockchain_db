@@ -55,6 +55,7 @@ void Chain::replace_chain(Chain &new_chain) {
 Block &Chain::find_block(const string& db_id, const string& doc_id) {
     //TODO: * pass location of where the docs are rather than the actual docs
     //      * implement a better searching algorithm
+    //      * Use STL search algorithms
     //Reverse search to get latest block
     for (int i = chain.size(); i != 0; --i){
         if (chain[i].check_block(db_id, doc_id)){
@@ -66,6 +67,7 @@ Block &Chain::find_block(const string& db_id, const string& doc_id) {
 Block &Chain::find_block(const string& db_id, const string& doc_id, const int& version) {
     //TODO: * pass location of where the docs are rather than the actual docs
     //      * implement a better searching algorithm
+    //      * Use STL search algorithms
     for (Block& b : chain){
         if (b.check_block(db_id, doc_id, version)){
             return b;
@@ -76,6 +78,7 @@ Block &Chain::find_block(const string& db_id, const string& doc_id, const int& v
 vector<Block> Chain::find_blocks(const string& db_id) {
     //TODO: * pass location of where the docs are rather than the actual docs
     //      * implement a better searching algorithm
+    //      * Use STL search algorithms
     vector<Block> blocks;
     for (Block& b : chain){
         if (b.check_block(db_id)){
@@ -88,6 +91,7 @@ vector<Block> Chain::find_blocks(const string& db_id) {
 vector<Block> Chain::find_blocks(const string& db_id, const string& doc_id) {
     //TODO: * pass location of where the docs are rather than the actual docs
     //      * implement a better searching algorithm
+    //      * Use STL search algorithms
     vector<Block> blocks;
     for (Block& b : chain){
         if (b.check_block(db_id, doc_id)){
@@ -180,11 +184,15 @@ vector<string> Chain::get_all_document_versions(const string& db_id, const strin
 vector<string> Chain::get_all_documents(const string& db_id) {
     //TODO: pass location of where the docs are rather than the actual docs
     vector<string> all_documents;
-
     vector<Block> blocks = find_blocks(db_id);
+    vector<Block> usable_blocks;
 
     for(Block& b : blocks){
-        all_documents.push_back(b.get_document());
+        // TODO: I don't like how this is done
+        Block latest_block = find_block(db_id, b.get_doc_id()) ;
+        if (b.get_version() == latest_block.get_version()){
+            all_documents.push_back(b.get_document());
+        }
     }
 
     return all_documents;
@@ -195,27 +203,48 @@ void Chain::update_document(string db_id, string doc_id, string doc) {
     // TODO: check the signature and key
     Block block = find_block(db_id, doc_id);
     // TODO: new block needs to be created... and added to the chain, implement a copy operator...
-    block.update_document(doc);
+    int proof = proof_of_work(previous_proof());
+    string prev_hash = previous_hash();
+    Block new_block {block, doc, proof, prev_hash};
+    chain.push_back(new_block);
 }
 
 void Chain::restore_document(string db_id, string doc_id, int version) {
     // TODO: check the signature and key
+    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block current_block = find_block(db_id, doc_id);
     Block restore_block = find_block(db_id, doc_id, version);
-    current_block.restore_document(restore_block.get_document());
+    string restore_doc = restore_block.get_document();
+    int proof = proof_of_work(previous_proof());
+    string prev_hash = previous_hash();
+    Block new_block {current_block, restore_doc, proof, prev_hash};
+    chain.push_back(new_block);
+    //current_block.restore_document(restore_block.get_document());
 }
 
 void Chain::resurrect_document(string db_id, string doc_id) {
     // TODO: check the signature and key
+    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block block = find_block(db_id, doc_id);
-    block.resurrect_document();
+    string doc = block.get_document();
+    int proof = proof_of_work(previous_proof());
+    string prev_hash = previous_hash();
+    Block new_block {block, doc, proof, prev_hash};
+    new_block.resurrect_document();
+    chain.push_back(new_block);
 }
 
 // Delete document
 void Chain::delete_document(string db_id, string doc_id) {
     // TODO: check the signature and key
+    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block block = find_block(db_id, doc_id);
-    block.delete_document();
+    string doc = block.get_document();
+    int proof = proof_of_work(previous_proof());
+    string prev_hash = previous_hash();
+    Block new_block {block, doc, proof, prev_hash};
+    new_block.delete_document();
+    chain.push_back(new_block);
 }
 
 bool Chain::is_document_active(const string& db_id, const string& doc_id) {

@@ -6,6 +6,7 @@
 #define CPP_BLOCKCHAIN_DB_CHAIN_H
 
 #include <vector>
+#include <algorithm>
 #include "block.h"
 #include "picosha2.h"
 #include "unique_id.h"
@@ -21,7 +22,7 @@ class Chain {
     Block& find_block(const string& db_id, const string& doc_id, const int& version);
     vector<Block> find_blocks(const string& db_id);
     vector<Block> find_blocks(const string& db_id, const string& doc_id);
-    int proof_of_work(const int& previous_proof);
+    static int proof_of_work(const int& previous_proof);
     string previous_hash();
     int previous_proof();
 

@@ -18,19 +18,28 @@ Block::Block(const string& db_id, const string& doc_id, const string& doc, const
     signature = sign;
 }
 
-// Block functions
-string Block::get_document() {
-    if (active) {
-        return document;
-    }
+Block::Block(const Block& b, const string& doc, const int& proof_of_work, const string& prv_hash) :
+                                timestamp {chrono::system_clock::to_time_t(chrono::system_clock::now())},
+                                database_id {b.database_id},
+                                document_id {b.document_id},
+                                document {doc},
+                                proof {proof_of_work},
+                                previous_hash {prv_hash}
+
+{
+    version = b.version+1;
+    active = b.active;
+    signature = b.signature;
 }
 
-void Block::update_document(const string &doc) {
+// Block functions
+
+/*void Block::update_document(const string &doc) {
     if (active) {
         document = doc;
         ++version;
     }
-}
+}*/
 
 void Block::restore_document(const string& doc) {
     if (active) {
@@ -42,14 +51,12 @@ void Block::restore_document(const string& doc) {
 void Block::resurrect_document() {
     if (!active){
         active = true;
-        ++version;
     }
 }
 
 void Block::delete_document() {
     if (active) {
         active = false;
-        ++version;
     }
 }
 
@@ -58,3 +65,5 @@ string Block::hash_block() {
     string block_str = this->block_to_string();
     return picosha2::hash256_hex_string(block_str.begin(), block_str.end());
 }
+
+
