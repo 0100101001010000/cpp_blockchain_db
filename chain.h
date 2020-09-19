@@ -46,13 +46,14 @@ public:
     bool is_document_active(const string& db_id, const string& doc_id);
     //Update
     // TODO: Should the ID change on update?
-    void update_document(string db_id, string doc_id, string doc);
+    void update_document(const string& db_id, const string& doc_id, const string& doc);
     // TODO: update encryption where the signature and doc change
-    void restore_document(string db_id, string doc_id, int version);
-    void resurrect_document(string db_id, string doc_id);
+    void update_encryption(const string& db_id, const string& doc_id, const string& doc, const string& signature);
+    void restore_document(const string& db_id, const string& doc_id, const int& version);
+    void resurrect_document(const string& db_id, const string& doc_id);
 
     //Delete
-    void delete_document(string db_id, string doc_id);
+    void delete_document(const string& db_id, const string& doc_id);
 };
 
 #endif //CPP_BLOCKCHAIN_DB_CHAIN_H

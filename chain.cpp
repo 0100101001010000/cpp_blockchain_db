@@ -105,12 +105,13 @@ int Chain::proof_of_work(const int& previous_proof) {
     int new_proof = 1;
     bool check_proof = false;
     while(!check_proof){
-        // int hash_calc = new_proof ** 2 - previous_proof ** 2
-        int hash_calc = (new_proof + 1) - (previous_proof + 1);
+        // TODO: Change hash calc
+        int hash_calc = new_proof + previous_proof;
         string hash_str = to_string(hash_calc);
         string hash_operation = picosha2::hash256_hex_string(hash_str.begin(), hash_str.end());
-        string hash_head = hash_operation.substr(0,4);
-        if (hash_head == "0000"){
+        // TODO: Decide complexity, the more 0s looked for the longer it will take
+        string hash_head = hash_operation.substr(0,1);
+        if (hash_head == "0"){
             check_proof = true;
         }
         else {
@@ -144,12 +145,14 @@ string Chain::create_document(const string& db_id, const string& doc, const stri
 // Read document
 string Chain::get_latest_document(const string& db_id, const string& doc_id) {
     // TODO: check the signature and key
+    //TODO: pass location of where the docs are rather than the actual docs
     Block block = find_block(db_id, doc_id);
     string document = block.get_document();
     return document;
 }
 
 string Chain::get_document_version(const string& db_id, const string& doc_id, const int& version) {
+    //TODO: pass location of where the docs are rather than the actual docs
     Block block = find_block(db_id, doc_id, version);
     string document = block.get_document();
     return document;
@@ -157,22 +160,9 @@ string Chain::get_document_version(const string& db_id, const string& doc_id, co
 
 vector<string> Chain::get_all_document_versions(const string& db_id, const string& doc_id) {
     //TODO: pass location of where the docs are rather than the actual docs
-    vector<string> all_document_versions;
-
-    // TODO: See which implementation is the quickest
-    /*Block first_block = find_block(db_id, doc_id, 0);
-    all_document_versions.push_back(first_block.get_document());
-
-    Block final_block = find_block(db_id, doc_id);
-    int max_version = final_block.get_version();
-
-    for (int i = 1; i < max_version; ++i){
-        Block block = find_block(db_id, doc_id, i);
-        all_document_versions.push_back(block.get_document());
-    }
-    all_document_versions.push_back(final_block.get_document());*/
-
     vector<Block> blocks = find_blocks(db_id, doc_id);
+    vector<string> all_document_versions;
+    all_document_versions.reserve(blocks.size());
 
     for(Block& b : blocks){
         all_document_versions.push_back(b.get_document());
@@ -194,24 +184,21 @@ vector<string> Chain::get_all_documents(const string& db_id) {
             all_documents.push_back(b.get_document());
         }
     }
-
     return all_documents;
 }
 
 // Update document
-void Chain::update_document(string db_id, string doc_id, string doc) {
+void Chain::update_document(const string& db_id, const string& doc_id, const string& doc) {
     // TODO: check the signature and key
     Block block = find_block(db_id, doc_id);
-    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     int proof = proof_of_work(previous_proof());
     string prev_hash = previous_hash();
     Block new_block {block, doc, proof, prev_hash};
     chain.push_back(new_block);
 }
 
-void Chain::restore_document(string db_id, string doc_id, int version) {
+void Chain::restore_document(const string& db_id, const string& doc_id, const int& version) {
     // TODO: check the signature and key
-    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block current_block = find_block(db_id, doc_id);
     Block restore_block = find_block(db_id, doc_id, version);
     string restore_doc = restore_block.get_document();
@@ -222,9 +209,8 @@ void Chain::restore_document(string db_id, string doc_id, int version) {
     //current_block.restore_document(restore_block.get_document());
 }
 
-void Chain::resurrect_document(string db_id, string doc_id) {
+void Chain::resurrect_document(const string& db_id, const string& doc_id) {
     // TODO: check the signature and key
-    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block block = find_block(db_id, doc_id);
     string doc = block.get_document();
     int proof = proof_of_work(previous_proof());
@@ -235,9 +221,8 @@ void Chain::resurrect_document(string db_id, string doc_id) {
 }
 
 // Delete document
-void Chain::delete_document(string db_id, string doc_id) {
+void Chain::delete_document(const string& db_id, const string& doc_id) {
     // TODO: check the signature and key
-    // TODO: new block needs to be created... and added to the chain, implement a copy operator...
     Block block = find_block(db_id, doc_id);
     string doc = block.get_document();
     int proof = proof_of_work(previous_proof());
@@ -250,6 +235,14 @@ void Chain::delete_document(string db_id, string doc_id) {
 bool Chain::is_document_active(const string& db_id, const string& doc_id) {
     Block block = find_block(db_id, doc_id);
     return block.is_active();
+}
+
+void Chain::update_encryption(const string &db_id, const string &doc_id, const string &doc, const string& signature) {
+    Block block = find_block(db_id, doc_id);
+    int proof = proof_of_work(previous_proof());
+    string prev_hash = previous_hash();
+    Block new_block {block, doc, proof, prev_hash, signature};
+    chain.push_back(new_block);
 }
 
 
